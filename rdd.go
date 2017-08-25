@@ -26,18 +26,15 @@ func Lock(rds redis.Cmdable, key string, timeout_ms int) bool {
 	now, ex := expiredTime(timeout_ms)
 	setnxCmd := rds.SetNX(key, ex, 0)
 	if setnxCmd.Val() {
-		// log.Println("setnx got a lock")
 		return true
 	}
 	getCmd := rds.Get(key)
 	if getCmd.Val() == "" {
 		getSetCmd := rds.GetSet(key, ex)
 		if getSetCmd.Val() == "" {
-			// log.Println("get nil, then getset then got a lock")
 			return true
 		}
 	} else {
-		// log.Println("get is not nil, peek timeout")
 		prevTime, err := getCmd.Int64()
 		if err != nil {
 			log.Println("get key int64 err:", err)
@@ -47,7 +44,6 @@ func Lock(rds redis.Cmdable, key string, timeout_ms int) bool {
 		if now > prevTime {
 			getSetCmd2 := rds.GetSet(key, ex)
 			if getSetCmd2.Val() == getCmd.Val() {
-				// log.Println("timeout, getset then got a lock")
 				return true
 			}
 		} else {
@@ -63,18 +59,15 @@ func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) bool 
 		now, ex := expiredTime(timeout_ms)
 		setnxCmd := rds.SetNX(key, ex, 0)
 		if setnxCmd.Val() {
-			// log.Println("setnx got a lock")
 			return true
 		}
 		getCmd := rds.Get(key)
 		if getCmd.Val() == "" {
 			getSetCmd := rds.GetSet(key, ex)
 			if getSetCmd.Val() == "" {
-				// log.Println("get nil, then getset then got a lock")
 				return true
 			}
 		} else {
-			// log.Println("get is not nil, peek timeout")
 			prevTime, err := getCmd.Int64()
 			if err != nil {
 				log.Println("get key int64 err:", err)
@@ -83,7 +76,6 @@ func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) bool 
 				if now > prevTime {
 					getSetCmd2 := rds.GetSet(key, ex)
 					if getSetCmd2.Val() == getCmd.Val() {
-						// log.Println("timeout, getset then got a lock")
 						return true
 					}
 				}
