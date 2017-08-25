@@ -36,6 +36,7 @@ func init() {
 }
 
 func TestLock(t *testing.T) {
+
 	start := time.Now()
 	locked := Lock(rds, "locker", 1000)
 	t.Log("locked:", locked)
@@ -54,7 +55,7 @@ func TestLock(t *testing.T) {
 	t.Log("unlocked:", unlocked)
 }
 
-func TestSync(t *testing.T) {
+func TestLock2(t *testing.T) {
 	all := int32(100)
 	counter := int32(0)
 	for i := 0; i < 200; i++ {
@@ -123,7 +124,7 @@ func TestTime(t *testing.T) {
 		}()
 		time.Sleep(5e7)
 	}
-	fmt.Printf("success:%d, avg:%+v ms\n", succCount, succTime/(float32(succCount)*float32(1000000.0)))
+	fmt.Printf("\n\nsuccess:%d, avg:%+v ms\n", succCount, succTime/(float32(succCount)*float32(1000000.0)))
 	fmt.Printf("failed:%d, avg:%+v ms\n", failedCount, failedTime/(float32(failedCount)*float32(1000000.0)))
 }
 
@@ -212,6 +213,25 @@ func TestLockRetryTime(t *testing.T) {
 		}()
 		time.Sleep(5e7)
 	}
-	fmt.Printf("success:%d, avg:%+v ms\n", succCount, succTime/(float32(succCount)*float32(1000000.0)))
+	fmt.Printf("\n\nsuccess:%d, avg:%+v ms\n", succCount, succTime/(float32(succCount)*float32(1000000.0)))
 	fmt.Printf("failed:%d, avg:%+v ms\n", failedCount, failedTime/(float32(failedCount)*float32(1000000.0)))
+}
+
+func TestSyncDo(t *testing.T) {
+	success := SyncDo(rds, "sync-do-locker", 1000, func(rollback chan bool) chan bool {
+		ret := make(chan bool, 1)
+		go func(ret chan bool) {
+			fmt.Println("doing...")
+			// time.Sleep(2e9)
+			ret <- true
+			select {
+			case <-rollback:
+				fmt.Println("rollback.")
+			case ret <- true:
+				fmt.Println("success end.")
+			}
+		}(ret)
+		return ret
+	})
+	fmt.Printf("successed:%+v\n", success)
 }
