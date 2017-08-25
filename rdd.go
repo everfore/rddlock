@@ -88,17 +88,19 @@ func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) bool 
 	return false
 }
 
-func SyncDo(rds redis.Cmdable, key string, timeout_ms int, do func(rollback chan bool) chan bool) bool {
-	timeout := time.NewTicker(time.Duration(timeout_ms * 1000000))
-	Lock(rds, key, timeout_ms+1000)
+// 执行异步任务
+func SyncDo(rds redis.Cmdable, key string, timeout_ms int, do func(timeout chan bool) chan bool) bool {
+	ticker := time.NewTicker(time.Duration(timeout_ms * 1000000))
+	Lock(rds, key, timeout_ms)
 	defer UnLock(rds, key)
-	rollback := make(chan bool, 1)
-	doret := do(rollback)
+	timeout := make(chan bool, 1)
+	doRet := do(timeout)
 	select {
-	case <-timeout.C:
-		rollback <- true
-		break
-	case <-doret:
+	case <-ticker.C:
+		timeout <- true
+		log.Println("timeout, rollback!")
+		return false
+	case <-doRet:
 		return true
 	}
 	return false

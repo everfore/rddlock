@@ -218,20 +218,20 @@ func TestLockRetryTime(t *testing.T) {
 }
 
 func TestSyncDo(t *testing.T) {
-	success := SyncDo(rds, "sync-do-locker", 1000, func(rollback chan bool) chan bool {
+	start := time.Now()
+	success := SyncDo(rds, "sync-do-locker", 1000, func(timeout chan bool) chan bool {
 		ret := make(chan bool, 1)
-		go func(ret chan bool) {
+		go func() {
 			fmt.Println("doing...")
-			// time.Sleep(2e9)
-			ret <- true
+			time.Sleep(5e9)
 			select {
-			case <-rollback:
-				fmt.Println("rollback.")
+			case <-timeout:
+				break
 			case ret <- true:
 				fmt.Println("success end.")
 			}
-		}(ret)
+		}()
 		return ret
 	})
-	fmt.Printf("successed:%+v\n", success)
+	fmt.Printf("successed:%+v, cost:%+v\n", success, time.Now().Sub(start))
 }
