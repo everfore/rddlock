@@ -5,29 +5,28 @@ redis 分布式锁实现
 
 ## Usage
 
-__Lock & UnLock/UnLockUnsafe__
+__Lock & UnLock__
 
 ```golang
 lockkey := "lock-key"
 timeout_ms := 3000
 
 locked, ex := rddlock.Lock(rds, lockkey, timeout_ms)
-if locked {
-	unlocked := rddlock.UnLock(rds, lockkey, ex)
-	if !unlocked {
-		unlocked = rddlock.UnLockUnsafe(rds, lockkey)
-		if !unlocked {
-			panic("unlock the key!")
-		}
-	}
-}
+defer reelock.UnLock(rds, lockkey, ex)
+```
+__UnLockUnsafe__
+
+
+```golang
+locked, _ := rddlock.Lock(rds, lockkey, timeout_ms)
+defer reelock.UnLockUnsafe(rds, lockkey)
 ```
 
 __LockRetry__
 
 ```golang
 retry_times := 10
-reelock.LockRetry(rds, lockkey, timeout_ms, retry_times) // get lock by retry
+locked, ex := reelock.LockRetry(rds, lockkey, timeout_ms, retry_times) // get lock by retry
 ```
 
 __SyncDo__
