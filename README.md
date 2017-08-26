@@ -1,5 +1,5 @@
 # rddlock
-redis distribute lock
+redis distributed lock
 
 redis 分布式锁实现
 

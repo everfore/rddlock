@@ -32,7 +32,6 @@ func redisClusterSetUp(addrs []string) {
 
 func init() {
 	redisSetUp("localhost", 32768, "", 0)
-	// redisClusterSetUp([]string{"192.168.199.237:7000", "192.168.199.235:7001", "192.168.199.235:7000"})
 	// redisClusterSetUp([]string{"192.168.199.1:11110", "192.168.199.1:11111", "192.168.199.1:11112"})
 }
 
