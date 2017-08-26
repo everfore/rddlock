@@ -1,7 +1,7 @@
 # rddlock
 redis distributed lock
 
-redis 分布式锁实现
+redis 分布式锁实现, 原理:_[redis 分布式锁实现](https://github.com/toukii/mdblog/blob/master/Java/redis-lock.md)_
 
 ## Usage
 
