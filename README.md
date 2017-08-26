@@ -25,14 +25,14 @@ if locked {
 
 __LockRetry__
 
-```
+```golang
 retry_times := 10
 reelock.LockRetry(rds, lockkey, timeout_ms, retry_times) // get lock by retry
 ```
 
 __SyncDo__
 
-```
+```golang
 successed := SyncDo(rds, lockkey, timeout_ms, func(timeout chan bool) chan bool {
 		ret := make(chan bool, 1)
 		go func() {
