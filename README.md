@@ -14,19 +14,21 @@ timeout_ms := 3000
 locked, ex := rddlock.Lock(rds, lockkey, timeout_ms)
 defer reelock.UnLock(rds, lockkey, ex)
 ```
-__UnLockUnsafe__
-
-
-```golang
-locked, _ := rddlock.Lock(rds, lockkey, timeout_ms)
-defer reelock.UnLockUnsafe(rds, lockkey)
-```
 
 __LockRetry__
 
 ```golang
 retry_times := 10
 locked, ex := reelock.LockRetry(rds, lockkey, timeout_ms, retry_times) // get lock by retry
+defer reelock.UnLock(rds, lockkey, ex)
+```
+
+__UnLockUnsafe__
+
+
+```golang
+locked, _ := rddlock.Lock(rds, lockkey, timeout_ms)
+defer reelock.UnLockUnsafe(rds, lockkey)
 ```
 
 __SyncDo__
