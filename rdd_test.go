@@ -257,7 +257,7 @@ func BenchmarkLock(b *testing.B) {
 
 func TestSyncDo(t *testing.T) {
 	start := time.Now()
-	success := SyncDo(rds, "sync-do-locker", 1000, func(timeout chan bool) chan bool {
+	err := SyncDo(rds, "sync-do-locker", 1000, func(timeout chan bool) chan bool {
 		ret := make(chan bool, 1)
 		go func() {
 			fmt.Println("doing...")
@@ -271,7 +271,7 @@ func TestSyncDo(t *testing.T) {
 		}()
 		return ret
 	})
-	fmt.Printf("successed:%+v, cost:%+v\n", success, time.Now().Sub(start))
+	fmt.Printf("SyncDo err:%+v, cost:%+v\n", err, time.Now().Sub(start))
 }
 
 func TestUnLockUnSafe(t *testing.T) {

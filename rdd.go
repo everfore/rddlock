@@ -112,19 +112,26 @@ func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) (bool
 }
 
 // 执行异步任务
-func SyncDo(rds redis.Cmdable, key string, timeout_ms int, do func(timeout chan bool) chan bool) bool {
+func SyncDo(rds redis.Cmdable, key string, timeout_ms int, do func(timeout chan bool) chan bool) error {
 	ticker := time.NewTicker(time.Duration(timeout_ms * 1000000))
-	_, ex := Lock(rds, key, timeout_ms)
-	defer UnLock(rds, key, ex)
+	locked, ex := LockRetry(rds, key, timeout_ms, 10)
+	if !locked {
+		return fmt.Errorf("lock the key(%s) failed!", key)
+	}
+	defer func() {
+		unlocked := UnLock(rds, key, ex)
+		if !unlocked {
+			UnLockUnsafe(rds, key)
+		}
+	}()
 	timeout := make(chan bool, 1)
 	doRet := do(timeout)
 	select {
 	case <-ticker.C:
 		timeout <- true
-		log.Println("timeout, rollback!")
-		return false
+		return fmt.Errorf("timeout!")
 	case <-doRet:
-		return true
+		return nil
 	}
-	return false
+	return fmt.Errorf("unexcepted exit!")
 }

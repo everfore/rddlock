@@ -33,7 +33,7 @@ reelock.LockRetry(rds, lockkey, timeout_ms, retry_times) // get lock by retry
 __SyncDo__
 
 ```golang
-successed := SyncDo(rds, lockkey, timeout_ms, func(timeout chan bool) chan bool {
+err := SyncDo(rds, lockkey, timeout_ms, func(timeout chan bool) chan bool {
 		ret := make(chan bool, 1)
 		go func() {
 			fmt.Println("doing...")
