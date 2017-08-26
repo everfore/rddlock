@@ -5,7 +5,54 @@ redis 分布式锁实现
 
 ## Usage
 
+__Lock & UnLock/UnLockUnsafe__
+
+```golang
+lockkey := "lock-key"
+timeout_ms := 3000
+
+locked, ex := rddlock.Lock(rds, lockkey, timeout_ms)
+if locked {
+	unlocked := rddlock.UnLock(rds, lockkey, ex)
+	if !unlocked {
+		unlocked = rddlock.UnLockUnsafe(rds, lockkey)
+		if !unlocked {
+			panic("unlock the key!")
+		}
+	}
+}
 ```
+
+__LockRetry__
+
+```
+retry_times := 10
+reelock.LockRetry(rds, lockkey, timeout_ms, retry_times) // get lock by retry
+```
+
+__SyncDo__
+
+```
+successed := SyncDo(rds, lockkey, timeout_ms, func(timeout chan bool) chan bool {
+		ret := make(chan bool, 1)
+		go func() {
+			fmt.Println("doing...")
+			// TODO SOMETHING
+			select {
+			case <-timeout:
+				// do the rollback
+				break
+			case ret <- true:
+				fmt.Println("success end.")
+			}
+		}()
+		return ret
+	})
+```
+
+## Example
+
+```golang
 package main
 
 import (
@@ -27,24 +74,51 @@ func main() {
 
 	lock_key := "lock-key"
 
-	locked := rddlock.Lock(rds, lock_key, 5)
+	locked, ex := rddlock.Lock(rds, lock_key, 5)
 	if locked {
 		fmt.Printf("LOCK %s: %+v\n", lock_key, locked)
-		rddlock.UnLock(rds, lock_key)
+		unlocked := rddlock.UnLock(rds, lock_key, ex)
+		if unlocked {
+			fmt.Printf("UNLOCK %s: %+v\n", lock_key, unlocked)
+		} else {
+			unlocked = rddlock.UnLockUnsafe(rds, lock_key)
+			fmt.Printf("UNLOCK-UNSAFE %s: %+v\n", lock_key, unlocked)
+		}
 	}
 
 	// retry lock
 
 	// 1. lock the key first
-	locked = rddlock.Lock(rds, lock_key, 5)
+	locked, _ = rddlock.Lock(rds, lock_key, 5)
 	fmt.Printf("FIRST step, LOCK %s:%+v\n", lock_key, locked)
 	// 2. retry to lock the locked key
-	locked = rddlock.LockRetry(rds, lock_key, 100, 100)
+	locked, _ = rddlock.LockRetry(rds, lock_key, 100, 100)
 	fmt.Printf("SECOND step, LOCK-RETRY %s:%+v\n", lock_key, locked)
 }
 
 // Output
 // LOCK lock-key: true
+// UNLOCK lock-key: true
 // FIRST step, LOCK lock-key:true
-// SECOND step, LOCK-RETRY lock-key:true/false
+// SECOND step, LOCK-RETRY lock-key:true
+```
+
+## test
+
+```
+success:200, avg:1.1074123 ms
+failed:0, avg:NaN ms
+--- PASS: TestLockTime (10.59s)
+
+#local-redis
+=== RUN   TestLockRetryTime
+success:200, avg:1.1741205 ms
+failed:0, avg:NaN ms
+--- PASS: TestLockRetryTime (10.58s)
+
+#uat-redis
+=== RUN   TestLockRetryTime
+success:200, avg:12.572702 ms
+failed:0, avg:NaN ms
+--- PASS: TestLockRetryTime (10.59s)
 ```
