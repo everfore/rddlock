@@ -31,10 +31,10 @@ var (
 
 func init() {
 	var err error
-	// rds, err = orm.NewRedisClient("localhost", 32768, "", 0)
-	rds, err = orm.NewRedisClusterClient(&redis.ClusterOptions{
-		Addrs: []string{""},
-	})
+	rds, err = orm.NewRedisClient("localhost", 32768, "", 0)
+	// rds, err = orm.NewRedisClusterClient(&redis.ClusterOptions{
+	// 	Addrs: []string{""},
+	// })
 
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func main() {
 		buy := false
 		gotTicket := ticket
 		if locked {
-			fmt.Printf("ticket:[%d], lock ex:%+v, and the redis value is:%s\n", ticket, ex, rds.Get(key).Val())
+			// fmt.Printf("ticket:[%d], lock ex:%+v, and the redis value is:%s\n", ticket, ex, rds.Get(key).Val())
 			if ticket > 0 {
 				buy = true
 				ticket--
@@ -72,10 +72,10 @@ func main() {
 			if !unlocked {
 				unlocked = rddlock.UnLockSafe(rds, key, 30)
 				// fmt.Printf("ticket:[%d], unlock use ex:%+v, but unlock failed, the redis ex is:%s\n", ticket, ex, rds.Get(key).Val())
-				fmt.Println("unsafe unlock:", unlocked)
+				// fmt.Println("unsafe unlock:", unlocked)
 			}
 		} else {
-			fmt.Printf("ticket:[%d], lock failed ex:%+v, and the redis value is:%s\n", ticket, ex, rds.Get(key).Val())
+			// fmt.Printf("ticket:[%d], lock failed ex:%+v, and the redis value is:%s\n", ticket, ex, rds.Get(key).Val())
 		}
 		if buy {
 			fmt.Fprintf(rw, "%+v", newMsg(fmt.Sprintf("Success:%d", gotTicket), int(given)))
