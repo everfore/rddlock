@@ -31,10 +31,10 @@ var (
 
 func init() {
 	var err error
-	rds, err = orm.NewRedisClient("localhost", 32768, "", 0)
-	// rds, err = orm.NewRedisClusterClient(&redis.ClusterOptions{
-	// 	Addrs: []string{"192.168.199.237:7000", "192.168.199.235:7001", "192.168.199.235:7000"},
-	// })
+	// rds, err = orm.NewRedisClient("localhost", 32768, "", 0)
+	rds, err = orm.NewRedisClusterClient(&redis.ClusterOptions{
+		Addrs: []string{""},
+	})
 
 	if err != nil {
 		panic(err)
@@ -70,7 +70,7 @@ func main() {
 			}
 			unlocked := rddlock.UnLock(rds, key, ex)
 			if !unlocked {
-				unlocked = rddlock.UnLockUnsafe(rds, key)
+				unlocked = rddlock.UnLockSafe(rds, key, 30)
 				// fmt.Printf("ticket:[%d], unlock use ex:%+v, but unlock failed, the redis ex is:%s\n", ticket, ex, rds.Get(key).Val())
 				fmt.Println("unsafe unlock:", unlocked)
 			}

@@ -44,6 +44,27 @@ func UnLockUnsafe(rds redis.Cmdable, key string) bool {
 	return true
 }
 
+// 直接删除key，可能会有问题：若删除之前，该key已经超时且被其他进程获得锁，将会删除其他进程的锁；删除之后，锁被释放，进而会有其他进程2获得锁。。。雪崩
+func UnLockSafe(rds redis.Cmdable, key string, safeDelTime_ms int64) bool {
+	ex, err := rds.Get(key).Int64()
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	now := time.Now().UnixNano()
+	if now+safeDelTime*1000000 > ex {
+		log.Println("the key is going to expire.")
+		return false
+	}
+	err = rds.Del(key).Err()
+	if err != nil {
+		log.Println(err)
+		// 删除锁失败，会导致其他进程长时间等待锁
+		return false
+	}
+	return true
+}
+
 func expiredTime(timeout_ms int) (int64, int64) {
 	now := time.Now()
 	return now.UnixNano(), now.Add(time.Duration(timeout_ms * 1000000)).UnixNano()

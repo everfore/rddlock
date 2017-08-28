@@ -9,7 +9,7 @@
     timeout: 1000
     n: 20
     runtine: 10
-    interval: 10
+    interval: 30
     resp:
       body: 1
   -
