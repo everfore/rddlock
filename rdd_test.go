@@ -241,6 +241,8 @@ func TestLockRetryTime(t *testing.T) {
 	fmt.Printf("failed:%d, avg:%+v ms\n", failedCount, failedTime/(float32(failedCount)*float32(1000000.0)))
 }
 
+// go test -bench BenchmarkLock -cpuprofile cpu.prof
+// go tool pprof -svg graphblog.test cpu.prof > cpu1.svg
 func BenchmarkLock(b *testing.B) {
 	var lockCount int32
 	for i := 0; i < b.N; i++ {

@@ -9,8 +9,9 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
-func UnLock(rds redis.Cmdable, key string, ex int64) bool {
-	if ex <= 0 {
+func UnLock(rds redis.Cmdable, key string, ex interface{}) bool {
+	if fmt.Sprintf("%d", ex) == "0" {
+		// if ex <= 0 {
 		// 如果没有获得锁，不能尝试解锁
 		return false
 	}
@@ -19,8 +20,8 @@ if (key == KEYS[2])
 then
 	return redis.call('del',KEYS[1])
 end
-return 0`
-	eval := rds.Eval(script, []string{key, strconv.FormatInt(ex, 10)})
+return key`
+	eval := rds.Eval(script, []string{key, fmt.Sprintf("%+v", ex)})
 	if eval.Err() != nil {
 		log.Printf("unlock failed, err:%+v", eval.Err())
 		return false
@@ -28,6 +29,7 @@ return 0`
 	if fmt.Sprintf("%+v", eval.Val()) == "1" {
 		return true
 	}
+	// log.Printf("unlock failed, ex should be:%+v, got ex:%+v\n", eval.Val(), ex)
 	return false
 }
 
@@ -47,50 +49,53 @@ func expiredTime(timeout_ms int) (int64, int64) {
 	return now.UnixNano(), now.Add(time.Duration(timeout_ms * 1000000)).UnixNano()
 }
 
-func Lock(rds redis.Cmdable, key string, timeout_ms int) (bool, int64) {
+func Lock(rds redis.Cmdable, key string, timeout_ms int) (bool, string) {
 	now, ex := expiredTime(timeout_ms)
 	setnxCmd := rds.SetNX(key, ex, 0)
 	if setnxCmd.Val() {
-		return true, ex
+		// log.Println("setnx got a lock, ex:", ex)
+		return true, strconv.FormatInt(ex, 10)
 	}
 	getCmd := rds.Get(key)
 	if getCmd.Val() == "" {
 		getSetCmd := rds.GetSet(key, ex)
 		if getSetCmd.Val() == "" {
-			return true, ex
+			// log.Println("get nil, then getset got a lock, ex:", ex)
+			return true, strconv.FormatInt(ex, 10)
 		}
 	} else {
 		prevTime, err := getCmd.Int64()
 		if err != nil {
 			log.Println("get key int64 err:", err)
-			return false, 0
+			return false, "0"
 		}
 		// 已经过期，可以尝试获得锁了
 		if now > prevTime {
 			getSetCmd2 := rds.GetSet(key, ex)
 			if getSetCmd2.Val() == getCmd.Val() {
-				return true, ex
+				// log.Println("timeout, then getset got a lock, ex:", ex)
+				return true, strconv.FormatInt(ex, 10)
 			}
 		} else {
-			return false, 0
+			return false, "0"
 		}
 	}
-	return false, 0
+	return false, "0"
 }
 
 // 重试 retry_times 次
-func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) (bool, int64) {
+func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) (bool, string) {
 	for i := 0; i < retry_times; i++ {
 		now, ex := expiredTime(timeout_ms)
 		setnxCmd := rds.SetNX(key, ex, 0)
 		if setnxCmd.Val() {
-			return true, ex
+			return true, strconv.FormatInt(ex, 10)
 		}
 		getCmd := rds.Get(key)
 		if getCmd.Val() == "" {
 			getSetCmd := rds.GetSet(key, ex)
 			if getSetCmd.Val() == "" {
-				return true, ex
+				return true, strconv.FormatInt(ex, 10)
 			}
 		} else {
 			prevTime, err := getCmd.Int64()
@@ -101,14 +106,14 @@ func LockRetry(rds redis.Cmdable, key string, timeout_ms, retry_times int) (bool
 				if now > prevTime {
 					getSetCmd2 := rds.GetSet(key, ex)
 					if getSetCmd2.Val() == getCmd.Val() {
-						return true, ex
+						return true, strconv.FormatInt(ex, 10)
 					}
 				}
 			}
 		}
 		time.Sleep(time.Millisecond)
 	}
-	return false, 0
+	return false, "0"
 }
 
 // 执行异步任务
