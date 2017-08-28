@@ -1,0 +1,20 @@
+-
+  url: http://localhost:8080/reset
+  # url: http://192.168.199.64:8080/reset
+  sync: true
+  then:
+  -
+    url: http://localhost:8080/buy1
+    # url: http://192.168.199.64:8080/buy
+    timeout: 1000
+    n: 20
+    runtine: 10
+    interval: 10
+    resp:
+      body: 1
+  -
+    url: http://localhost:8080/status
+    # url: http://192.168.199.64:8080/status
+    timeout: 1000
+    resp:
+      body: ok
