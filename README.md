@@ -3,9 +3,12 @@ redis distributed lock
 
 redis 分布式锁实现, 原理:_[redis 分布式锁实现](https://github.com/toukii/mdblog/blob/master/Java/redis-lock.md)_
 
+lock的超时时间：timeout_ms
+
 ## Usage
 
 __Lock & UnLock__
+
 
 ```golang
 lockkey := "lock-key"
@@ -16,6 +19,9 @@ defer reelock.UnLock(rds, lockkey, ex)
 ```
 
 __LockRetry__
+
+
+重试retry_times次，尝试获得锁
 
 ```golang
 retry_times := 10
@@ -29,6 +35,16 @@ __UnLockUnsafe__
 ```golang
 locked, _ := rddlock.Lock(rds, lockkey, timeout_ms)
 defer reelock.UnLockUnsafe(rds, lockkey)
+```
+
+__UnLockSafe__
+
+预留安全时间，释放锁。
+
+```golang
+locked, _ := rddlock.Lock(rds, lockkey, timeout_ms)
+safeDelTime_ms := 40
+defer reelock.UnLockSafe(rds, lockkey, safeDelTime_ms)
 ```
 
 __SyncDo__
