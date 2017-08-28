@@ -44,7 +44,7 @@ func UnLockUnsafe(rds redis.Cmdable, key string) bool {
 	return true
 }
 
-// 直接删除key，可能会有问题：若删除之前，该key已经超时且被其他进程获得锁，将会删除其他进程的锁；删除之后，锁被释放，进而会有其他进程2获得锁。。。雪崩
+// 直接删除key，增加安全事件，若在安全时间内，key即将过期，就等待key过期（其他进程判断超时），以免造成雪崩
 func UnLockSafe(rds redis.Cmdable, key string, safeDelTime_ms int64) bool {
 	ex, err := rds.Get(key).Int64()
 	if err != nil {
