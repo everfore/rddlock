@@ -52,7 +52,7 @@ func UnLockSafe(rds redis.Cmdable, key string, safeDelTime_ms int64) bool {
 		return false
 	}
 	now := time.Now().UnixNano()
-	if now+safeDelTime*1000000 > ex {
+	if now+safeDelTime_ms*1000000 > ex {
 		log.Println("the key is going to expire.")
 		return false
 	}
