@@ -31,7 +31,8 @@ var (
 
 func init() {
 	var err error
-	rds, err = orm.NewRedisClient("localhost", 32768, "", 0)
+	// rds, err = orm.NewRedisClient("localhost", 32768, "", 0)
+	rds, err = orm.NewRedisClient("db2.daocloudinternal.io", 60095, "wkxJdS0CoyJ", 0)
 	// rds, err = orm.NewRedisClusterClient(&redis.ClusterOptions{
 	// 	Addrs: []string{""},
 	// })
