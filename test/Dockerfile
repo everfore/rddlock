@@ -1,4 +1,4 @@
-FROM daocloud.io/library/golang:1.6.0
+FROM daocloud.io/library/golang:latest
 
 WORKDIR /app/gopath/rddlock
 ENV GOPATH /app/gopath
